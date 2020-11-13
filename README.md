@@ -1,6 +1,6 @@
 
 <a href="#">
-<img align="right" src="https://github-readme-stats.vercel.app/api?username=feiquan123&show_icons=true&hide_border=true&icon_color=586069&title_color=a0a9af">
+<img align="right" src="https://github-readme-stats.vercel.app/api?username=feiquan123&show_icons=true&hide_border=true&theme=tokyonight&bg_color=45,333366,330066&title_color=9966ff" alt="feiquan123's GitHub Stats">
 </a>
 
 ### Welcome to feiquan123's GitHub 👋
