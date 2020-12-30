@@ -1,5 +1,3 @@
-![feiquan123's GitHub Stats](https://github-readme-stats.vercel.app/api?username=feiquan123&show_icons=true&hide_border=true&icon_color=586069&title_color=a0a9af)
-
 ## Welcome to feiquan123's Home 👋
 
 > Books are the ladder of human progress.   - Golg
