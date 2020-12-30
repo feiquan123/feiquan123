@@ -1,5 +1,9 @@
-## Welcome to feiquan123's blog
+<a href="#">
+<img align="top" src="https://github-readme-stats.vercel.app/api?username=feiquan123&show_icons=true&hide_border=true&icon_color=586069&title_color=a0a9af alt="feiquan123's GitHub Stats">
+</a>
 
-> Books are the ladder of human progress.   - Golgi
+## Welcome to feiquan123's Home 👋
 
-> 书籍是人类进步的阶梯。 ——高尔基
+> Books are the ladder of human progress.   - Golg
+
+![](https://img.shields.io/badge/-Go-blue?style=flat-square&logo=Go&logoColor=fff) ![](https://img.shields.io/badge/-Python-333?style=flat-square&logo=Python&logoColor=fff) ![](https://img.shields.io/badge/-PyTorch-e34f26?style=flat-square&logo=PyTorch&logoColor=fff) ![](https://img.shields.io/badge/-TensorFlow-e5cd0c?style=flat-square&logo=TensorFlow&logoColor=fff)
