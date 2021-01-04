@@ -215,23 +215,31 @@
 
    查询主节点容器的独立IP
 
+   ```sh
+   docker inspect --format='{{.NetworkSettings.IPAddress}}'  master_mysql
+   
+   # 172.17.0.2
+   ```
+   
+   
+   
    ```mysql
    -- 链接配置
-   CHANGE MASTER TO MASTER_HOST='你的网络IP,不能是 127.0.0.1', MASTER_PORT=3307, MASTER_LOG_FILE='mysql-bin.000001', MASTER_LOG_POS=156, MASTER_CONNECT_RETRY=30, MASTER_BIND='';
+   CHANGE MASTER TO MASTER_HOST='172.17.0.2', MASTER_PORT=3306,  MASTER_LOG_FILE='mysql-bin.000003', MASTER_LOG_POS=156, MASTER_CONNECT_RETRY=30, MASTER_BIND='';
    
-   -- 启动
+-- 启动
    start slave user='slave' password='123456';
-   -- 如果 slave 报错:  [ERROR] [MY-010584] [Repl] Slave I/O for channel , 尝试使用 root
+-- 如果 slave 报错:  [ERROR] [MY-010584] [Repl] Slave I/O for channel , 尝试使用 root
    -- start slave user='root' password='123456';
    
    -- 查看 slave 状态，确保: Slave_IO_Running: Connecting, Slave_SQL_Running: Yes
    show slave status\G
    ```
-
+   
    说明:
-
+   
    ```yaml
-   master_host: Master的地址
+master_host: Master的地址
    master_port: Master的端口号
    master_user: 用于数据同步的用户
    master_password: 用于同步的用户的密码
@@ -239,7 +247,7 @@
    master_log_pos: 从哪个 Position 开始读，即上文中提到的 Position 字段的值
    master_connect_retry: 如果连接失败，重试的时间间隔，单位是秒，默认是60秒
    ```
-
+   
    注意: ==可用`docker logs -f slave_mysql`查看连接错误时的日志==
 
 ### 测试
