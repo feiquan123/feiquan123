@@ -1,4 +1,4 @@
-## 基于Docker实现Mysql主从同步
+## 基于Docker实现Mysql主从同步以及数据持久化
 
 ### Docker搭建主从服务
 
@@ -8,21 +8,111 @@
    docker pull mysql:8.0
    ```
 
-2. 运行容器
+2. 准备配置文件
+
+   Mysql8.0 的默认配置文件位置在,`/etc/mysql/my.cnf`,而自定义的配置文件会放在`/etc/mysql/conf.d`。在本机上创建一个目录 `/opt/docker/opt/mysql/conf.d ` 用于存放 mysql 的主从配置，之后会将此目录挂载到容器上
+
+   - 主配置 `/opt/docker/data/mysql/conf.d/master.conf`
+
+     ```ini
+     [client]
+     default-character-set=utf8
+     [mysql]
+     default-character-set=utf8
+     [mysqld]
+     pid-file        = /var/run/mysqld/mysqld.pid
+     socket          = /var/run/mysqld/mysqld.sock
+     datadir         = /var/lib/mysql
+     secure-file-priv= NULL
+     # 同一局域网内唯一ID
+     server-id=1
+     # 开启二进制日志功能，用于从节点的历史复制回放
+     log-bin=mysql-bin
+     collation-server=utf8_unicode_ci
+     init-connect='SET NAMES uft8'
+     character-set-server=utf8
+     # 开启日志
+     # general_log = 1
+     # general_log_file = /var/log/mysql/general_sql.log
+     # 需要忽略的库，忽略后不同步此库
+     binlog-ignore-db=information_schema
+     binlog-ignore-db=cluster
+     binlog-ignore-db=mysql
+     # 需要同步的库,需要复制多个库时重复设置此选项。如果想同步所有库，直接注释此选项
+     # replicate-do-db=test
+     ```
+
+     
+
+   - 从配置`/opt/docker/data/mysql/conf.d/slave.conf`
+
+     ```ini
+     [client]
+     default-character-set=utf8
+     [mysql]
+     default-character-set=utf8
+     [mysqld]
+     pid-file        = /var/run/mysqld/mysqld.pid
+     socket          = /var/run/mysqld/mysqld.sock
+     datadir         = /var/lib/mysql
+     secure-file-priv= NULL
+     # 同一局域网内唯一ID
+     server-id=2
+     # 开启二进制日志功能，以备Slave作为其它Slave的Master时使用
+     log-bin=mysql-slave-bin
+     # relay_log配置中继日志
+     relay_log=mysql-relay-bin
+     collation-server=utf8_unicode_ci
+     init-connect='SET NAMES uft8'
+     character-set-server=utf8
+     # 开启日志
+     # general_log = 1
+     # general_log_file = /var/log/mysql/general_sql.log
+     # 需要忽略的库，忽略后不同步此库
+     binlog-ignore-db=information_schema
+     binlog-ignore-db=cluster
+     binlog-ignore-db=mysql
+     replicate-ignore-db=mysql
+     # 需要复制的库
+     # replicate-do-db=test
+   log-slave-updates
+     slave-skip-errors=all
+     slave-net-timeout=60
+     ```
+     
+     
+
+3. 运行容器
 
    Master 对外映射端口 3307
 
    ```sh
-   docker run -p 3307:3306 --name master_mysql -e MYSQL_ROOT_PASSWORD=123456 -d mysql:8.0 
+   # 主节点 mysql 数据持久化
+   mkdir -p /opt/docker/data/mysql/datam
+   # 启动容器
+   docker run --name master_mysql \
+   -p 3307:3306 \
+   -v /opt/docker/data/mysql/conf.d/master.conf:/etc/mysql/my.cnf \
+   -v /opt/docker/data/mysql/datam:/var/lib/mysql \
+   -e MYSQL_ROOT_PASSWORD=123456 \
+   -d mysql:8.0
    ```
 
    Slave 对外映射端口 3308
 
    ```sh
-   docker run -p 3308:3306 --name slave_mysql -e MYSQL_ROOT_PASSWORD=123456 -d mysql:8.0
+   # 主节点 mysql 数据持久化
+   mkdir -p /opt/docker/data/mysql/datas
+   # 启动容器
+   docker run --name slave_mysql \
+   -p 3308:3306 \
+   -v /opt/docker/data/mysql/conf.d/slave.conf:/etc/mysql/my.cnf \
+   -v /opt/docker/data/mysql/datas:/var/lib/mysql \
+   -e MYSQL_ROOT_PASSWORD=123456 \
+   -d mysql:8.0
    ```
 
-3. 查看正在运行的容器
+4. 查看正在运行的容器
 
    ```sh
    docker ps
@@ -38,7 +128,7 @@
 
 ### 主节点
 
-1. 修改ids
+1. 同步时间
 
    ```sh
    # 进入 master 容器内部
@@ -47,39 +137,8 @@
    # 同步时间
    ln -sf /usr/share/zoneinfo/Asia/Shanghai /etc/localtime
    echo 'Asia/Shanghai' >/etc/timezone
-   
-   # 更换源
-   mv /etc/apt/sources.list /etc/apt/sources.list.bak
-   echo "deb http://mirrors.ustc.edu.cn/debian stable main contrib non-free" >> /etc/apt/sources.list
-   echo "deb http://mirrors.ustc.edu.cn/debian stable-updates main contrib non-free" >>/etc/apt/sources.list
-   
-   # 安装vim
-   apt-get update
-   apt-get install vim -y
-   
-   # 修改 my.cnf
-   vim /etc/mysql/my.cnf
    ```
-
-2. my.cnf 添加内容:
-
-   ```ini
-   [mysqld]
-   # 同一局域网内唯一ID
-   server-id=1
-   # 开启二进制日志功能
-   log-bin=mysql-bin
-   # 开启日志
-   # general_log = 1
-   # general_log_file = /var/log/mysql/general_sql.log
-   # 需要忽略的库，忽略后不同步此库
-   binlog-ignore-db=information_schema
-   binlog-ignore-db=cluster
-   binlog-ignore-db=mysql
-   # 需要同步的库
-   # binlog-do-db=test
-   ```
-
+   
 3. 重启 master 容器
 
    ```sh
@@ -119,7 +178,7 @@
    +------------------+----------+--------------+----------------------------------+-------------------+
    | File             | Position | Binlog_Do_DB | Binlog_Ignore_DB                 | Executed_Gtid_Set |
    +------------------+----------+--------------+----------------------------------+-------------------+
-   | mysql-bin.000003 |      156 |              | information_schema,cluster,mysql |                   |
+   | mysql-bin.000004 |      156 |              | information_schema,cluster,mysql |                   |
    +------------------+----------+--------------+----------------------------------+-------------------+
    ```
 
@@ -129,7 +188,7 @@
 
    ```mysql
    CREATE USER 'slave'@'%' IDENTIFIED BY '123456';
-   GRANT REPLICATION SLAVE, REPLICATION CLIENT on *.* TO 'slave'@'%';
+   GRANT REPLICATION SLAVE, REPLICATION CLIENT on *.* TO 'slave'@'%' WITH GRANT OPTION;
    ```
 
    可用`show grants for slave;` 来验证是否授权成功, 使用`mysql -h127.0.0.1 -P3307 -uslave -p123456` 来验证是否可以登录
@@ -145,45 +204,8 @@
    # 同步时间
    ln -sf /usr/share/zoneinfo/Asia/Shanghai /etc/localtime
    echo 'Asia/Shanghai' >/etc/timezone
-   
-   # 更换源
-   mv /etc/apt/sources.list /etc/apt/sources.list.bak
-   echo "deb http://mirrors.ustc.edu.cn/debian stable main contrib non-free" >> /etc/apt/sources.list
-   echo "deb http://mirrors.ustc.edu.cn/debian stable-updates main contrib non-free" >>/etc/apt/sources.list
-   
-   # 安装vim
-   apt-get update
-   apt-get install vim -y
-   
-   # 修改 my.cnf
-   vim /etc/mysql/my.cnf
    ```
-
-2. my.cnf 添加内容:
-
-   ```ini
-   [mysqld]
-   # 同一局域网内唯一ID
-   server-id=2
-   # 开启二进制日志功能，以备Slave作为其它Slave的Master时使用
-   log-bin=mysql-slave-bin
-   # relay_log配置中继日志
-   relay_log=mysql-relay-bin
-   # 开启日志
-   # general_log = 1
-   # general_log_file = /var/log/mysql/general_sql.log
-   # 需要忽略的库，忽略后不同步此库
-   binlog-ignore-db=information_schema
-   binlog-ignore-db=cluster
-   binlog-ignore-db=mysql
-   replicate-ignore-db=mysql
-   # 需要复制的库
-   # replicate-do-db=ufind_db
-   log-slave-updates
-   slave-skip-errors=all
-   slave-net-timeout=60
-   ```
-
+   
 3. 重启 slave 容器
 
    ```sh
@@ -217,7 +239,7 @@
 
    ```mysql
    -- 链接配置
-   CHANGE MASTER TO MASTER_HOST='你的网络IP,不能是 127.0.0.1', MASTER_PORT=3307, MASTER_LOG_FILE='mysql-bin.000001', MASTER_LOG_POS=156, MASTER_CONNECT_RETRY=30, MASTER_BIND='';
+   CHANGE MASTER TO MASTER_HOST='你的网络IP,不能是 127.0.0.1', MASTER_PORT=3307, MASTER_LOG_FILE='mysql-bin.000004', MASTER_LOG_POS=156, MASTER_CONNECT_RETRY=30, MASTER_BIND='';
    
    -- 启动
    start slave user='slave' password='123456';
@@ -269,3 +291,4 @@ select * from test.tbl_test;
 | li   |  22 |
 +------+-----+
 ```
+
