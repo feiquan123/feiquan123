@@ -9,4 +9,4 @@
 ![](https://img.shields.io/badge/-Go-blue?style=flat-square&logo=Go&logoColor=fff) ![](https://img.shields.io/badge/-Python-333?style=flat-square&logo=Python&logoColor=fff) ![](https://img.shields.io/badge/-PyTorch-e34f26?style=flat-square&logo=PyTorch&logoColor=fff) ![](https://img.shields.io/badge/-TensorFlow-e5cd0c?style=flat-square&logo=TensorFlow&logoColor=fff)
 
 <br>
-[![trophy](https://github-profile-trophy.vercel.app/?username=feiquan123&margin-w=8)](https://github.com/ryo-ma/github-profile-trophy)
+![](https://github-readme-stats.vercel.app/api?username=feiquan123&theme=light&hide_border=false&include_all_commits=true&count_private=true)
